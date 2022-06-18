@@ -66,11 +66,11 @@ fn main() {
         let input = input.trim().parse::<i32>().expect("NaN");
 
         time_passed += match input {
-            1 => actions::hunt(),
-            2 => actions::gather_fruits(),
-            3 => actions::scavenge(),
-            4 => actions::treatment(),
-            5 => actions::sleep(),
+            1 => actions::hunt(time_of_day),
+            2 => actions::gather_fruits(time_of_day),
+            3 => actions::scavenge(time_of_day),
+            4 => actions::treatment(time_of_day),
+            5 => actions::sleep(time_of_day),
             6 => break,
             _ => break
         };
