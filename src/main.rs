@@ -45,11 +45,14 @@ fn main() {
 
     let mut time_passed: u16 = 12;
     loop {
-        let processed_time = time::process_time(&time_passed);
+        time_passed = time::process_time(time_passed);
+        let time_of_day: time::TimeOfDay = time::time_of_day(&time_passed);
+
         println!("
     Status:
         Horas: {}
-        ", processed_time.0);
+        ", time::to_string(&time_passed) + ", " + &time_of_day.to_string()
+        );
 
         println!("{}", option_menu);
 
