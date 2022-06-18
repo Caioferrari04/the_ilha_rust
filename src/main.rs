@@ -1,8 +1,7 @@
 use std::{thread, time::Duration, io::{self, Write}};
 
-fn hunt(){
-
-}
+mod actions;
+mod time;
 
 fn main() {
     let repeat_minus: String = str::repeat("-=", 60);
@@ -43,11 +42,18 @@ fn main() {
         [5] - Dormir
         [6] - Sair do Jogo\n";
 
+
+    let mut time_passed: u16 = 12;
     loop {
+        println!("
+    Status:
+        Horas: {}
+        ", time::process_time(&time_passed));
+
         println!("{}", option_menu);
 
         print!("
-        --->");
+    --->");
         io::stdout().flush().expect("houve um erro");
 
         let mut input: String = String::new();
@@ -55,14 +61,18 @@ fn main() {
 
         let input = input.trim().parse::<i32>().expect("NaN");
 
-        match input {
-            1 => hunt(),
+        time_passed += match input {
+            1 => actions::hunt(),
+            2 => actions::gather_fruits(),
+            3 => actions::scavenge(),
+            4 => actions::treatment(),
+            5 => actions::sleep(),
             6 => break,
-            _ => println!("Entrada invalida!")
+            _ => break
         };
     }
 
     println!("
-        Até mais!
+    Até mais!
     ");
 }
