@@ -1,7 +1,9 @@
-use std::{thread, time::Duration, io::{self, Write}};
-
 mod actions;
 mod time;
+mod protagonist;
+
+use std::{thread, time::Duration, io::{self, Write}};
+use protagonist::Protagonist;
 
 fn main() {
     let repeat_minus: String = str::repeat("-=", 60);
@@ -32,7 +34,9 @@ fn main() {
         Cace, ou procure por frutas para sobreviver. 
         Boa sorte, e tente não morrer!
     ");
-
+    
+    let mut protagonist: Protagonist = Protagonist { hp: 100, hunger: 100, sleep: 100 };
+    let mut time_passed: u16 = 12;              
     let option_menu: &str = "
     Opções:
         [1] - Caçar/Pescar
@@ -40,10 +44,9 @@ fn main() {
         [3] - Vasculhar escombros do avião
         [4] - Tratamento
         [5] - Dormir
-        [6] - Sair do Jogo\n";
+        [6] - Passar tempo
+        [7] - Sair do Jogo\n";
 
-
-    let mut time_passed: u16 = 12;
     loop {
         time_passed = time::process_time(time_passed);
         let time_of_day: time::TimeOfDay = time::time_of_day(&time_passed);
@@ -51,13 +54,20 @@ fn main() {
         println!("
     Status:
         Horas: {}
-        ", time::to_string(&time_passed) + ", " + &time_of_day.to_string()
+        Fome: {}
+        Saude: {}
+        Sono: {}
+        ", 
+        time::to_string(&time_passed) + ", " + &time_of_day.to_string(),
+        protagonist.hunger,
+        protagonist.hp,
+        protagonist.sleep
         );
 
         println!("{}", option_menu);
-
         print!("
     --->");
+
         io::stdout().flush().expect("houve um erro");
 
         let mut input: String = String::new();
@@ -66,14 +76,17 @@ fn main() {
         let input = input.trim().parse::<i32>().expect("NaN");
 
         time_passed += match input {
-            1 => actions::hunt(time_of_day),
-            2 => actions::gather_fruits(time_of_day),
-            3 => actions::scavenge(time_of_day),
-            4 => actions::treatment(time_of_day),
-            5 => actions::sleep(time_of_day),
-            6 => break,
+            1 => actions::hunt(time_of_day, &mut protagonist),
+            2 => actions::gather_fruits(time_of_day, &mut protagonist),
+            3 => actions::scavenge(time_of_day, &mut protagonist),
+            4 => actions::treatment(time_of_day, &mut protagonist),
+            5 => actions::sleep(time_of_day, &mut protagonist),
+            6 => 1,
             _ => break
         };
+
+        protagonist.hunger -= 10;
+        protagonist.sleep -= 5;
     }
 
     println!("
