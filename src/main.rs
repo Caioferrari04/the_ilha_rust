@@ -1,4 +1,7 @@
-mod actions;
+extern crate num;
+#[macro_use]
+extern crate num_derive;
+
 mod time;
 mod protagonist;
 
@@ -38,25 +41,25 @@ fn main() {
     let mut protagonist: Protagonist = Protagonist { hp: 100, hunger: 100, sleep: 100 };
     let mut time_passed: u16 = 12;              
     let option_menu: &str = "
-    Opções:
-        [1] - Caçar/Pescar
-        [2] - Colher frutas
-        [3] - Vasculhar escombros do avião
-        [4] - Tratamento
-        [5] - Dormir
-        [6] - Passar tempo
-        [7] - Sair do Jogo\n";
+        Opções:
+            [1] - Caçar/Pescar
+            [2] - Colher frutas
+            [3] - Vasculhar escombros do avião
+            [4] - Tratamento
+            [5] - Dormir
+            [6] - Passar tempo
+            [7] - Sair do Jogo\n";
 
     loop {
         time_passed = time::process_time(time_passed);
         let time_of_day: time::TimeOfDay = time::time_of_day(&time_passed);
 
         println!("
-    Status:
-        Horas: {}
-        Fome: {}
-        Saude: {}
-        Sono: {}
+        Status:
+            Horas: {}
+            Fome: {}
+            Saude: {}
+            Sono: {}
         ", 
         time::to_string(&time_passed) + ", " + &time_of_day.to_string(),
         protagonist.hunger,
@@ -66,7 +69,7 @@ fn main() {
 
         println!("{}", option_menu);
         print!("
-    --->");
+        --->");
 
         io::stdout().flush().expect("houve um erro");
 
@@ -75,18 +78,32 @@ fn main() {
 
         let input = input.trim().parse::<i32>().expect("NaN");
 
-        time_passed += match input {
-            1 => actions::hunt(time_of_day, &mut protagonist),
-            2 => actions::gather_fruits(time_of_day, &mut protagonist),
-            3 => actions::scavenge(time_of_day, &mut protagonist),
-            4 => actions::treatment(time_of_day, &mut protagonist),
-            5 => actions::sleep(time_of_day, &mut protagonist),
-            6 => 1,
+        let result_action = match input {
+            1 => protagonist.hunt(time_of_day),
+            2 => protagonist.gather_fruits(time_of_day),
+            3 => protagonist.scavenge(time_of_day),
+            4 => protagonist.treatment(time_of_day),
+            5 => protagonist.sleep(time_of_day),
+            6 => protagonist.pass_time(),
             _ => break
         };
 
-        protagonist.hunger -= 10;
-        protagonist.sleep -= 5;
+        time_passed += result_action.time_spent;
+
+        println!("
+        Resultados:
+        {},
+        Ganho/perda de saude: {},
+        Ganho/perda de fome: {},
+        Ganho/perda de cansaço: {},
+        Tempo gasto: {} 
+        ", 
+        result_action.description,
+        result_action.hp_gl,
+        result_action.hunger_gl,
+        result_action.sleep_gl,
+        result_action.time_spent
+        );
     }
 
     println!("
