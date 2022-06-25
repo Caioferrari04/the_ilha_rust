@@ -1,10 +1,10 @@
 use std::fmt;
 
 pub enum TimeOfDay {
-    Madrugada,
-    Manha,
-    Tarde,
-    Noite
+    Noite = 1,
+    Madrugada = 3,
+    Manha = 5,
+    Tarde = 10
 }
 
 impl fmt::Display for TimeOfDay {
@@ -18,15 +18,11 @@ impl fmt::Display for TimeOfDay {
     }
 }
 
-pub fn process_time(current_time: u16) -> u16 {
-    if current_time > 24 {
-        current_time - 24
-    } else {
-        current_time
-    }
+pub fn process_time(current_time: u8) -> u8 {
+    if current_time > 24 { current_time - 24 } else { current_time }
 }
 
-pub fn time_of_day(&current_time: &u16) -> TimeOfDay {
+pub fn time_of_day(&current_time: &u8) -> TimeOfDay {
     match current_time {
         1..=6 => TimeOfDay::Madrugada,
         7..=12 => TimeOfDay::Manha,
@@ -36,6 +32,6 @@ pub fn time_of_day(&current_time: &u16) -> TimeOfDay {
     }
 }
 
-pub fn to_string(&processed_time: &u16) -> String {
+pub fn to_string(&processed_time: &u8) -> String {
     processed_time.to_string() + if processed_time > 1 { " horas" } else { " hora" }
 }

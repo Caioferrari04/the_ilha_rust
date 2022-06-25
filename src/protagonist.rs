@@ -3,205 +3,136 @@ use rand::Rng;
 use crate::time::TimeOfDay;
 
 pub struct Protagonist {
-    pub hp: i8,
-    pub hunger: i8,
-    pub sleep: i8
+    pub hp: Option<Status>,
+    pub hunger: Option<Status>,
+    pub sleep: Option<Status>
 }
 
-pub struct Result {
+#[derive(FromPrimitive, Copy, Clone)]
+pub enum Status {
+    Horrible = 1, //%15
+    Bad = 2, //%25
+    Normal = 3, //%40
+    Good = 4, //%10
+    Excelent = 5 //%5
+}
+
+pub struct Event {
     pub description: String,
-    pub hp_gl: i8,
-    pub hunger_gl: i8,
-    pub sleep_gl: i8,
-    pub time_spent: u16
+    pub quality: Option<Status>,
+    pub time_spent: u8,
+    pub is_dead: bool
 }
 
-#[derive(FromPrimitive)]
-pub enum Event {
-    Horrible = 0,
-    Bad = 1,
-    Normal = 2,
-    Good = 3,
-    Excelent = 4
-}
-
-impl fmt::Display for Event {
+impl fmt::Display for Status {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Event::Horrible => write!(f, " obteve resultados desastrosos!"),
-            Event::Bad => write!(f, " obteve resultados ruins!"),
-            Event::Normal => write!(f, " obteve resultados."),
-            Event::Good => write!(f, " obteve bons resultados!"),
-            Event::Excelent => write!(f, " obteve excelentes resultados!"),
+            Status::Horrible => write!(f, " horrível!"),
+            Status::Bad => write!(f, " ruim!"),
+            Status::Normal => write!(f, " normal!"),
+            Status::Good => write!(f, " bom!"),
+            Status::Excelent => write!(f, " excelente!"),
         }
     }
 }
 
 impl Protagonist {
-    fn trigger_event(&mut self, event_id: i8, event_description: String) -> Result {
-        let event: Option<Event> = num::FromPrimitive::from_i8(event_id);
-        let mut rng = rand::thread_rng();
-        let hp_gl: i8;
-        let hunger_gl: i8;
-        let sleep_gl: i8;
-        let time_spent: u16;
+    pub fn hunt(&mut self, period: TimeOfDay) -> Event {
+        let quality = calculate_output(period);
+        let description = String::from("Você foi caçar para se alimentar pelo dia... e foi");
 
-        match event {
-            None => { panic!("Evento invalido") },
-            Some(Event::Horrible) => {
-                hp_gl = rng.gen_range(self.hp/2..self.hp);
-                hunger_gl = rng.gen_range(self.hunger/2..self.hunger);
-                sleep_gl = rng.gen_range(self.sleep/2..self.sleep);
-                time_spent = rng.gen_range(2..5);
+        let hp_status = self.hp.unwrap_or(Status::Horrible) as i8;
+        let hunger_status = self.hunger.unwrap_or(Status::Horrible) as i8;
+        let sleep_status = self.sleep.unwrap_or(Status::Horrible) as i8;
 
-                self.hp -= hp_gl;
-                self.hunger -= hunger_gl;
-                self.sleep -= sleep_gl;
-            }
-            Some(Event::Excelent) => {
-                hp_gl = 0;
-                hunger_gl = rng.gen_range((100 - self.hunger)/2..(100 - self.hunger));
-                sleep_gl = rng.gen_range(0..self.sleep/4);
-                time_spent = 1;
-
-                self.hunger += hunger_gl;
-                self.sleep -= sleep_gl;
-            }
-            _ => {
-                hp_gl = rng.gen_range(0..self.hp/4);
-                hunger_gl = rng.gen_range(0..self.hunger/2);
-                sleep_gl = rng.gen_range(0..self.sleep/4);
-                time_spent = rng.gen_range(1..3);
-
-                self.hp -= hp_gl;
-                self.hunger += hunger_gl;
-                self.sleep -= sleep_gl;
-            }
+        self.hp = match quality {
+            Some(Status::Horrible) => update_state(hp_status, -2),
+            Some(Status::Bad) => update_state(hp_status, -1),
+            Some(Status::Excelent) => update_state(hp_status, 1),
+            _ => self.hp
         };
-                        
-        Result { 
-            description: event_description + &event.unwrap().to_string(),
-            hp_gl,
-            hunger_gl,
-            sleep_gl,
-            time_spent
-        }
+
+        self.hunger = match quality {
+            Some(Status::Horrible) => update_state(hunger_status, -2),
+            Some(Status::Bad) => update_state(hunger_status, -1),
+            Some(Status::Normal) => update_state(hunger_status, 1),
+            Some(Status::Good) => update_state(hunger_status, 2),
+            Some(Status::Excelent) => update_state(hunger_status, 3),
+            _ => self.hunger
+        };
+
+        self.sleep = match quality {
+            Some(Status::Horrible) => update_state(sleep_status, -3),
+            Some(Status::Bad) => update_state(sleep_status, -2),
+            Some(Status::Excelent) => self.sleep,
+            _ => update_state(sleep_status, -1)
+        };
+
+        mount_event(description, quality, self.hp.is_none())
     }
 
-    pub fn hunt(&mut self, time_of_day: TimeOfDay) -> Result {
-        let mut rng = rand::thread_rng();
-        match time_of_day {
-            TimeOfDay::Madrugada => {
-                self.trigger_event(rng.gen_range(0..=2), String::from("Caça durante a madrugada"))
-            }
-            TimeOfDay::Manha => {
-                self.trigger_event(rng.gen_range(0..=3), String::from("Caça durante a manhã"))
-            }
-            TimeOfDay::Tarde => {
-                self.trigger_event(rng.gen_range(0..=4), String::from("Caça durante a tarde"))
-            }
-            TimeOfDay::Noite => {
-                self.trigger_event(rng.gen_range(0..=1), String::from("Caça durante a noite"))
-            }
-        }
+    pub fn gather_fruits(&self, period: TimeOfDay) -> Event {
+        Event { description: String::from(""), quality: None, time_spent: 0, is_dead: true } //placeholder
     }
-    
-    pub fn gather_fruits(&mut self, time_of_day: TimeOfDay) -> Result {
-        let mut rng = rand::thread_rng();
-        match time_of_day {
-            TimeOfDay::Manha | TimeOfDay::Tarde => {
-                self.trigger_event(rng.gen_range(0..=3), String::from("Coleta de frutas durante o dia"))
-            }
-            _ => {
-                self.trigger_event(rng.gen_range(0..=2), String::from("Coleta de frutas durante a noite"))
-            }
-        }
+
+    pub fn scavenge(&self, period: TimeOfDay) -> Event {
+        Event { description: String::from(""), quality: None, time_spent: 0, is_dead: true } //placeholder
     }
-    
-    pub fn scavenge(&mut self, time_of_day: TimeOfDay) -> Result {
-        let mut rng = rand::thread_rng();
-        match time_of_day {
-            TimeOfDay::Manha | TimeOfDay::Tarde => {
-                self.trigger_event(rng.gen_range(0..=3), String::from("Procura nos escombros do avião durante o dia"))
-            }
-            _ => {
-                self.trigger_event(rng.gen_range(0..=2), String::from("Procura nos escombros do avião durante a noite"))
-            },
-        }
+
+    pub fn treatment(&self, period: TimeOfDay) -> Event {
+        Event { description: String::from(""), quality: None, time_spent: 0, is_dead: true } //placeholder
     }
-    
-    pub fn treatment(&mut self, time_of_day: TimeOfDay) -> Result { //to be implemented later
-        let mut rng = rand::thread_rng();
-        match time_of_day {
-            TimeOfDay::Manha | TimeOfDay::Tarde => {
-                self.trigger_event(rng.gen_range(0..=3), String::from("Tratamento"))
-            }
-            _ => {
-                self.trigger_event(rng.gen_range(0..=2), String::from("Tratamento"))
-            },
-        }
+
+    pub fn sleep(&self, period: TimeOfDay) -> Event {
+        Event { description: String::from(""), quality: None, time_spent: 0, is_dead: true } //placeholder
     }
-    
-    pub fn sleep(&mut self, time_of_day: TimeOfDay) -> Result {
-        match time_of_day {
-            TimeOfDay::Madrugada => {
-                self.sleep = 80;
-                self.hunger -= 20;
-                self.hp += 5;
-                Result {
-                    description: String::from("Dormiu por 6 horas, ainda se sente um pouco cansado"),
-                    hp_gl: 5,
-                    hunger_gl: 20,
-                    sleep_gl: 80,
-                    time_spent: 6
-                }
-            },
-            TimeOfDay::Manha => {
-                self.sleep = 60;
-                self.hunger -= 15;
-                Result {
-                    description: String::from("Dormiu por 4 horas, se sente cansado"),
-                    hp_gl: 0,
-                    hunger_gl: 15,
-                    sleep_gl: 60,
-                    time_spent: 4
-                }
-            },
-            TimeOfDay::Tarde => {
-                self.sleep += 20;
-                self.hunger -= 10;
-                Result {
-                    description: String::from("Cochilou por 2 horas, sente que conseguiu descansar um pouco"),
-                    hp_gl: 0,
-                    hunger_gl: 10,
-                    sleep_gl: 20,
-                    time_spent: 2
-                }
-            },
-            TimeOfDay::Noite => {
-                self.sleep = 100;
-                self.hunger -= 25;
-                self.hp += 10;
-                Result {
-                    description: String::from("Dormiu por 8 horas, conseguiu descansar completamente"),
-                    hp_gl: 10,
-                    hunger_gl: 25,
-                    sleep_gl: 100,
-                    time_spent: 8
-                }
-            },
-        }
+
+    pub fn pass_time(&self) -> Event {
+        Event { description: String::from(""), quality: None, time_spent: 0, is_dead: true } //placeholder
     }
-    
-    pub fn pass_time(&mut self) -> Result { //prep for random events
-        self.hunger -= 5;
-        self.sleep -= 5;
-        Result {
-            description: String::from("Passou 1 hora sentado em seu acampamento"),
-            hp_gl: 0,
-            hunger_gl: 5,
-            sleep_gl: 5,
-            time_spent: 1
-        }
-    } 
+}
+
+fn calculate_output(period: TimeOfDay) -> Option<Status> {
+    let mut rng = rand::thread_rng();
+    let period = period as u8;
+    let period = rng.gen_range(period..period*10);
+
+    match period {
+        0..=14 => Some(Status::Horrible),
+        15..=39 => Some(Status::Bad),
+        40..=79 => Some(Status::Normal),
+        80..=94 => Some(Status::Good),
+        95..=100 => Some(Status::Excelent),
+        _ => None
+    }
+}
+
+fn update_state(current_state: i8, change: i8) -> Option<Status> {
+    if current_state + change < 0 {
+        None
+    } else if current_state + change <= 5 {
+        num::FromPrimitive::from_i8(current_state + change)
+    } else {
+        num::FromPrimitive::from_i8(5)
+    }
+}
+
+fn mount_event(description: String, quality: Option<Status>, is_dead: bool) -> Event {
+    let description = description + &quality.unwrap_or(Status::Horrible).to_string();
+    let quality_number = quality.unwrap_or(Status::Horrible) as i8;
+
+    let time_spent = if quality_number - 5 < 0 {
+        (quality_number - 5) * -1
+    } else {
+        quality_number - 5
+    };
+
+    let time_spent = time_spent as u8;
+
+    Event {
+        description,
+        quality, 
+        time_spent, 
+        is_dead
+    }
 }
