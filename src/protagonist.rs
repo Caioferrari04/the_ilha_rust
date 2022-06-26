@@ -20,7 +20,7 @@ pub enum Status {
 pub struct Event {
     pub description: String,
     pub quality: Option<Status>,
-    pub time_spent: u8,
+    pub time_spent: i8,
     pub is_dead: bool
 }
 
@@ -93,9 +93,8 @@ impl Protagonist {
 }
 
 fn calculate_output(period: TimeOfDay) -> Option<Status> {
-    let mut rng = rand::thread_rng();
     let period = period as u8;
-    let period = rng.gen_range(period..period*10);
+    let period = rand::thread_rng().gen_range(period..period*10);
 
     match period {
         0..=14 => Some(Status::Horrible),
@@ -126,8 +125,6 @@ fn mount_event(description: String, quality: Option<Status>, is_dead: bool) -> E
     } else {
         quality_number - 5
     };
-
-    let time_spent = time_spent as u8;
 
     Event {
         description,

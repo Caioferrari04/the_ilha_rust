@@ -18,11 +18,11 @@ impl fmt::Display for TimeOfDay {
     }
 }
 
-pub fn process_time(current_time: u8) -> u8 {
+pub fn process_time(current_time: i8) -> i8 {
     if current_time > 24 { current_time - 24 } else { current_time }
 }
 
-pub fn time_of_day(&current_time: &u8) -> TimeOfDay {
+pub fn time_of_day(&current_time: &i8) -> TimeOfDay {
     match current_time {
         1..=6 => TimeOfDay::Madrugada,
         7..=12 => TimeOfDay::Manha,
@@ -32,6 +32,6 @@ pub fn time_of_day(&current_time: &u8) -> TimeOfDay {
     }
 }
 
-pub fn to_string(&processed_time: &u8) -> String {
+pub fn to_string(&processed_time: &i8) -> String {
     processed_time.to_string() + if processed_time > 1 { " horas" } else { " hora" }
 }

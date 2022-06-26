@@ -54,7 +54,7 @@ fn game(repeat_minus: String) {
         ");
         println!("{}", repeat_minus);
     
-        let mut time_passed: u8 = 12;              
+        let mut time_passed: i8 = 12;              
         let option_menu: &str = "Opções:
         [1] - Caçar/Pescar
         [2] - Colher frutas
@@ -104,7 +104,6 @@ fn game(repeat_minus: String) {
             println!("{}", repeat_minus);
     
             if result_action.is_dead {
-                print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
                 println!("Você morreu! Deseja tentar novamente? [s/n]");
                 let mut input = String::new();
                 io::stdin().read_line(&mut input).expect("Valor inválido!");
